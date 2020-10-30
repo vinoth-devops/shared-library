@@ -1,0 +1,52 @@
+pipeline {
+    agent any
+
+    stages {
+         stage('Build CI') {
+             when {
+               beforeAgent true
+               not {
+                 anyOf {
+                     branch 'master';
+                     branch 'develop'
+                 }
+               }
+             }
+             steps{
+                echo "I am only building CI."
+             }
+         }
+         stage('Build CI and push artifact') {
+             when {
+                beforeAgent true
+                anyOf {
+                    allOf { branch 'master'; not { triggeredBy 'UserIdCause' } };
+                    branch 'develop'
+                }
+             }
+             steps{
+                echo "I am building CI and push artifact"
+             }
+
+         }
+         stage('Deployment - trigger the Dag') {
+             when {
+                beforeAgent true
+                anyOf {
+                    allOf { branch 'master'; triggeredBy 'UserIdCause' };
+                    branch 'develop'
+                }
+             }
+             steps {
+                echo "I am triggering the dag"
+             }
+
+         }
+         stage('Cleanup Workspace') {
+             steps {
+                 cleanWs()
+                 echo "Cleaned Up Workspace For Project"
+             }
+         }
+    }
+}
