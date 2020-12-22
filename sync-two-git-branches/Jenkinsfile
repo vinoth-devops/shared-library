@@ -1,0 +1,47 @@
+pipeline {
+    agent any
+    stages {
+        stage('Merge & PUSH CODE') {
+            steps {
+                git credentialsId: 'github-token', url: 'https://github.com/vinoth-devops/shared-library.git'
+                
+                withCredentials([usernamePassword(credentialsId: 'github11-token', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+                  sh """
+                  git config --global credential.username ${GIT_USERNAME}
+                  git config --global credential.helper "!echo password=${GIT_PASSWORD}; echo"
+                  
+                  git remote add source https://github.com/vinoth-devops/TestA.git
+                  git fetch source
+
+                  git config --global --unset credential.helper
+                  git config --global --unset credential.username
+                  """
+               }
+               
+               withCredentials([usernamePassword(credentialsId: 'github-token', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+                  sh """
+                  git config --global credential.username ${GIT_USERNAME}
+                  git config --global credential.helper "!echo password=${GIT_PASSWORD}; echo"
+                  
+                  git merge source/master
+                  git push origin master
+                  
+                  git config --global --unset credential.helper
+                  git config --global --unset credential.username
+                  """
+               }
+             }
+        }
+    }
+        post {
+        always {
+            deleteDir()
+        }
+        failure {
+            sh """
+            git config --global --unset credential.helper
+            git config --global --unset credential.username
+            """
+        }
+      }
+}
